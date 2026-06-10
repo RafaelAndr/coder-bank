@@ -1,0 +1,81 @@
+package br.com.coderbank.customerportal.exception;
+
+import jakarta.persistence.EntityNotFoundException;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ProblemDetail;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.ResponseStatus;
+
+import java.net.URI;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+@ControllerAdvice
+public class ControllerHandlerException {
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ProblemDetail handleValidation(MethodArgumentNotValidException e){
+
+        Map<String, String> errors = e
+                .getBindingResult()
+                .getFieldErrors()
+                .stream()
+                .collect(Collectors.toMap(
+                        FieldError::getField,
+                        FieldError::getDefaultMessage
+                ));
+
+        var problemDetail = ProblemDetail.forStatusAndDetail(
+                HttpStatus.BAD_REQUEST,
+                "Validation failed"
+        );
+
+        problemDetail.setTitle("Invalid request data");
+        problemDetail.setProperty("errors", errors);
+
+        return problemDetail;
+    }
+
+    @ExceptionHandler({CustomerAlreadyExistsException.class})
+    @ResponseBody
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ProblemDetail handleClientAlreadyExists(CustomerAlreadyExistsException e){
+
+        var problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, e.getMessage());
+
+        problemDetail.setTitle("Conflict: Existing cpf");
+        problemDetail.setType(URI.create("http://www.siteexemplo.com.br"));
+
+        return problemDetail;
+    }
+
+    @ExceptionHandler({DuplicatedEmailException.class})
+    @ResponseBody
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ProblemDetail handleDuplicatedEmailException(DuplicatedEmailException e){
+
+        var problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, e.getMessage());
+
+        problemDetail.setTitle("Conflict: Existing email");
+        problemDetail.setType(URI.create("http://www.siteexemplo.com.br"));
+
+        return problemDetail;
+    }
+
+    @ExceptionHandler({EntityNotFoundException.class})
+    @ResponseBody
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ProblemDetail handleEntityNotFoundException(EntityNotFoundException e){
+
+        var problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, e.getMessage());
+
+        problemDetail.setTitle("Not found entity");
+        problemDetail.setType(URI.create("http://www.siteexemplo.com.br"));
+        return problemDetail;
+    }
+}

@@ -1,0 +1,37 @@
+spring:
+  application:
+    name: customerportal
+  h2:
+    console:
+      enabled: true
+      path: /h2
+  datasource:
+    url: jdbc:postgresql://localhost:5432/customers
+    username: postgres
+    password: Rafael@2003
+    driverClassName: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+feign:
+  circuitbreaker:
+    enabled: true
+
+resilience4j:
+  retry:
+    instances:
+      AccountServiceRetry:
+        maxAttempts: 3
+        waitDuration: 1s
+
+  circuitbreaker:
+    instances:
+      accountServiceCB:
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
